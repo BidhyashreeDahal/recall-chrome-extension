@@ -1,0 +1,21 @@
+{
+    "mainfest_version": 3,
+    "name" :" Recall",
+    "version":"0.1.0",
+    "description":"Privete Linkedin Context notes per profile",
+    "permissions":["storage"],
+    "host_permissions":["https://www.linkedin.com/*"],
+    "content_scripts":[
+        {
+            "matches": ["https://www.linkedin.com/in/*"],
+            "js": ["content.js"],
+            "css": ["content.css"],
+            "run_at": "document_idle"
+        }
+    ],
+    "action":{
+        "default_title":"Recall",
+        "default_popup": "popup.html"
+    }
+
+}
