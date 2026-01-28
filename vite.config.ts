@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { resolve } from "path";
+import { resolve } from "node:path";
 
 export default defineConfig({
   plugins: [react()],
@@ -9,14 +9,13 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        // Content script entry (compiled to dist/content.js)
+        // Must output dist/content.js
         content: resolve(__dirname, "src/content/content.tsx"),
 
-        // Popup page entry (compiled to dist/popup.html + assets)
+        // Must output dist/popup.html
         popup: resolve(__dirname, "src/popup/popup.html")
       },
       output: {
-        // Make filenames predictable (no hashes for entry files)
         entryFileNames: "[name].js",
         chunkFileNames: "chunks/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash][extname]"
