@@ -1,12 +1,33 @@
 <!doctype html>
 <html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Recall</title>
+    <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="./popup.tsx"></script>
+    <div id="app">
+      <div class="top">
+        <div class="title">Recall</div>
+        <button id="exportBtn" class="btn">Export</button>
+      </div>
+
+      <input id="q" class="search" placeholder="Search name, tags, notes…" />
+
+      <div id="tags" class="tags"></div>
+
+      <div id="list" class="list"></div>
+
+      <div class="import">
+        <label class="file">
+          Import JSON
+          <input id="importFile" type="file" accept="application/json" />
+        </label>
+        <div id="msg" class="msg"></div>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
   </body>
 </html>

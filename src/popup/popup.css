@@ -1,0 +1,21 @@
+body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; }
+#app { width: 360px; padding: 12px; box-sizing:border-box; }
+.top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.title { font-weight: 900; font-size: 14px; }
+.btn { border:0; border-radius:999px; padding:8px 10px; font-weight:800; cursor:pointer; background:#0a66c2; color:#fff; }
+.search { width:100%; margin:10px 0; padding:10px 12px; border-radius:12px; border:1px solid rgba(0,0,0,0.15); }
+.tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+.chip { border:1px solid rgba(0,0,0,0.15); border-radius:999px; padding:6px 10px; font-size:12px; font-weight:800; cursor:pointer; background:#fff; }
+.chip.active { background: rgba(10,102,194,0.12); border-color: rgba(10,102,194,0.3); }
+.list { display:flex; flex-direction:column; gap:8px; max-height: 440px; overflow:auto; }
+.card { border:1px solid rgba(0,0,0,0.12); border-radius:14px; padding:10px; background:#fff; }
+.name { font-weight:900; font-size:12px; }
+.meta { font-size:11px; opacity:0.75; margin-top:3px; }
+.note { font-size:12px; margin-top:8px; white-space:pre-wrap; }
+.row { display:flex; gap:8px; margin-top:10px; }
+.small { flex:1; border-radius:999px; border:1px solid rgba(0,0,0,0.18); background:#fff; padding:8px; font-weight:800; cursor:pointer; }
+.small.primary { background:#0a66c2; color:#fff; border:0; }
+.import { margin-top:10px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.file { font-size:12px; font-weight:800; cursor:pointer; }
+.file input { display:none; }
+.msg { font-size:11px; opacity:0.8; text-align:right; }

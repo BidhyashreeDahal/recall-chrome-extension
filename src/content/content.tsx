@@ -13,15 +13,6 @@ function isProfilePage() {
   return location.pathname.startsWith("/in/");
 }
 
-function findConnectButton(): HTMLButtonElement | null {
-  // LinkedIn changes DOM often; keep it tolerant.
-  const buttons = Array.from(document.querySelectorAll("button"));
-  for (const btn of buttons) {
-    const text = (btn.innerText || "").trim();
-    if (text === "Connect") return btn as HTMLButtonElement;
-  }
-  return null;
-}
 
 function mount() {
   if (!isProfilePage()) return;
@@ -53,7 +44,8 @@ function RecallWidget() {
 
   const pill = document.createElement("button");
   pill.className = "recall-pill";
-  pill.textContent = "Recall";
+  pill.textContent = "Add note";
+  pill.style.display = "block";
   pill.onclick = async () => {
     if (!isProfilePage()) return;
 
@@ -98,11 +90,11 @@ function RecallWidget() {
 
     panel.innerHTML = `
       <div class="recall-header">
-        <div class="recall-title">Save context</div>
+        <div class="recall-title">Add a note</div>
         <button class="recall-x" aria-label="Close">×</button>
       </div>
 
-      <div class="recall-sub">Quick note for future-you ✨</div>
+      <div class="recall-sub">Save context for future-you ✨</div>
 
       <label class="recall-label">Met at</label>
       <input class="recall-input" id="recall-metat" placeholder="e.g. TorontoJS Meetup" value="${escapeHtml(metAt)}" />
@@ -113,7 +105,7 @@ function RecallWidget() {
       <label class="recall-label">Note</label>
       <textarea class="recall-textarea" id="recall-note" placeholder="What did you talk about?">${escapeHtml(note)}</textarea>
 
-      <button class="recall-primary" id="recall-save">Save</button>
+      <button class="recall-primary" id="recall-save">Save note</button>
     `;
 
     const closeBtn = panel.querySelector(".recall-x") as HTMLButtonElement;
@@ -144,9 +136,10 @@ function RecallWidget() {
       // Requirement: disappear completely after save
       hidePanel();
 
-      // But keep a subtle “View Recall” entry point
-      pill.textContent = "View Recall";
+      // But keep a subtle “View note” entry point
+      pill.textContent = "View note";
       pill.classList.add("has-note");
+      pill.style.display = "block";
     };
   }
 
@@ -158,7 +151,7 @@ function RecallWidget() {
 
     panel.innerHTML = `
       <div class="recall-header">
-        <div class="recall-title">Recall</div>
+        <div class="recall-title">Note</div>
         <button class="recall-x" aria-label="Close">×</button>
       </div>
 
@@ -175,8 +168,8 @@ function RecallWidget() {
       </div>
 
       <div class="recall-actions">
-        <button class="recall-secondary" id="recall-edit">Edit</button>
-        <button class="recall-primary" id="recall-close">Done</button>
+        <button class="recall-secondary" id="recall-edit">Edit note</button>
+        <button class="recall-primary" id="recall-close">Close</button>
       </div>
     `;
 
@@ -209,21 +202,11 @@ function RecallWidget() {
     const note = await loadNote(profileUrl);
     if (note) {
       existingNote = note;
-      pill.textContent = "View Recall";
+      pill.textContent = "View note";
       pill.classList.add("has-note");
     } else {
-      pill.textContent = "Recall";
+      pill.textContent = "Add note";
       pill.classList.remove("has-note");
-    }
-
-    // Hook connect button once (best-effort)
-    const connect = findConnectButton();
-    if (connect && !(connect as any).dataset?.recallHooked) {
-      (connect as any).dataset.recallHooked = "true";
-      connect.addEventListener("click", () => {
-        // Capture mode opens when Connect is clicked
-        showCapture({ metAt: "LinkedIn" });
-      });
     }
   })();
 
@@ -231,8 +214,12 @@ function RecallWidget() {
   return null as any;
 }
 
-// Mount at load + handle LinkedIn SPA navigation
-window.addEventListener("load", mount);
+// Mount immediately if possible, otherwise on load
+if (document.readyState === "complete" || document.readyState === "interactive") {
+  mount();
+} else {
+  window.addEventListener("load", mount);
+}
 
 let lastHref = location.href;
 setInterval(() => {
