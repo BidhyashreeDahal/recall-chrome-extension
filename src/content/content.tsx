@@ -1,11 +1,32 @@
-import React from "react";
 import { createRoot } from "react-dom/client";
+import { loadNote, saveNote } from "../shared/storage";
+import type { contextNote } from "../shared/types";
+
+type Mode = "hidden" | "capture" | "recall";
+
+function getProfileUrlKey() {
+  // Stable enough for MVP: profile URL path
+  return location.pathname.replace(/\/$/, "");
+}
+
+function isProfilePage() {
+  return location.pathname.startsWith("/in/");
+}
+
+function findConnectButton(): HTMLButtonElement | null {
+  // LinkedIn changes DOM often; keep it tolerant.
+  const buttons = Array.from(document.querySelectorAll("button"));
+  for (const btn of buttons) {
+    const text = (btn.innerText || "").trim();
+    if (text === "Connect") return btn as HTMLButtonElement;
+  }
+  return null;
+}
 
 function mount() {
-  // Only on profile pages
-  if (!location.pathname.startsWith("/in/")) return;
+  if (!isProfilePage()) return;
 
-  // Prevent duplicates (LinkedIn SPA)
+  // Avoid duplicate mounts (SPA)
   if (document.getElementById("recall-root")) return;
 
   const rootEl = document.createElement("div");
@@ -14,27 +35,215 @@ function mount() {
   rootEl.style.top = "120px";
   rootEl.style.right = "20px";
   rootEl.style.zIndex = "2147483647";
-
   document.body.appendChild(rootEl);
 
-  createRoot(rootEl).render(
-    <button
-      style={{
-        padding: "6px 12px",
-        borderRadius: "999px",
-        border: "0",
-        cursor: "pointer"
-      }}
-      className="recall-trigger"
-    >
-      Recall
-    </button>
-  );
+  createRoot(rootEl).render(<RecallWidget />);
 }
 
-// Run after page is ready
+function RecallWidget() {
+  const profileUrl = getProfileUrlKey();
+
+  // Local UI state (simple)
+  let mode: Mode = "hidden";
+  let existingNote: contextNote | null = null;
+
+  // Create DOM UI container (no React state to keep content script super stable)
+  const container = document.createElement("div");
+  container.className = "recall-container";
+
+  const pill = document.createElement("button");
+  pill.className = "recall-pill";
+  pill.textContent = "Recall";
+  pill.onclick = async () => {
+    if (!isProfilePage()) return;
+
+    // If note exists -> show recall mode
+    const note = await loadNote(profileUrl);
+    if (note) {
+      existingNote = note;
+      showRecall(note);
+    } else {
+      showCapture();
+    }
+  };
+
+  const panel = document.createElement("div");
+  panel.className = "recall-panel";
+  panel.style.display = "none";
+
+  container.appendChild(pill);
+  container.appendChild(panel);
+
+  // Attach once
+  setTimeout(() => {
+    const root = document.getElementById("recall-root");
+    if (root && root.childElementCount === 0) root.appendChild(container);
+  }, 0);
+
+  // --- UI render helpers ---
+  function hidePanel() {
+    mode = "hidden";
+    panel.style.display = "none";
+  }
+
+  function showCapture(prefill?: Partial<contextNote>) {
+    mode = "capture";
+    panel.style.display = "block";
+    panel.classList.remove("recall-mode");
+    panel.classList.add("capture-mode");
+
+    const metAt = prefill?.metAt ?? "";
+    const tags = (prefill?.tags ?? []).join(", ");
+    const note = prefill?.note ?? "";
+
+    panel.innerHTML = `
+      <div class="recall-header">
+        <div class="recall-title">Save context</div>
+        <button class="recall-x" aria-label="Close">×</button>
+      </div>
+
+      <div class="recall-sub">Quick note for future-you ✨</div>
+
+      <label class="recall-label">Met at</label>
+      <input class="recall-input" id="recall-metat" placeholder="e.g. TorontoJS Meetup" value="${escapeHtml(metAt)}" />
+
+      <label class="recall-label">Tags</label>
+      <input class="recall-input" id="recall-tags" placeholder="e.g. recruiter, conference" value="${escapeHtml(tags)}" />
+
+      <label class="recall-label">Note</label>
+      <textarea class="recall-textarea" id="recall-note" placeholder="What did you talk about?">${escapeHtml(note)}</textarea>
+
+      <button class="recall-primary" id="recall-save">Save</button>
+    `;
+
+    const closeBtn = panel.querySelector(".recall-x") as HTMLButtonElement;
+    closeBtn.onclick = hidePanel;
+
+    const saveBtn = panel.querySelector("#recall-save") as HTMLButtonElement;
+    saveBtn.onclick = async () => {
+      const metAtEl = panel.querySelector("#recall-metat") as HTMLInputElement;
+      const tagsEl = panel.querySelector("#recall-tags") as HTMLInputElement;
+      const noteEl = panel.querySelector("#recall-note") as HTMLTextAreaElement;
+
+      const now = Date.now();
+      const toSave: contextNote = {
+        profileUrl,
+        metAt: metAtEl.value.trim() || undefined,
+        tags: tagsEl.value
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
+        note: noteEl.value.trim(),
+        createdAt: existingNote?.createdAt ?? now,
+        updatedAt: now
+      };
+
+      await saveNote(toSave);
+      existingNote = toSave;
+
+      // Requirement: disappear completely after save
+      hidePanel();
+
+      // But keep a subtle “View Recall” entry point
+      pill.textContent = "View Recall";
+      pill.classList.add("has-note");
+    };
+  }
+
+  function showRecall(note: contextNote) {
+    mode = "recall";
+    panel.style.display = "block";
+    panel.classList.remove("capture-mode");
+    panel.classList.add("recall-mode");
+
+    panel.innerHTML = `
+      <div class="recall-header">
+        <div class="recall-title">Recall</div>
+        <button class="recall-x" aria-label="Close">×</button>
+      </div>
+
+      <div class="recall-card">
+        <div class="recall-row">
+          <span class="recall-k">Met at</span>
+          <span class="recall-v">${note.metAt ? escapeHtml(note.metAt) : "—"}</span>
+        </div>
+        <div class="recall-row">
+          <span class="recall-k">Tags</span>
+          <span class="recall-v">${note.tags?.length ? note.tags.map(tagChip).join("") : "—"}</span>
+        </div>
+        <div class="recall-note">${note.note ? escapeHtml(note.note) : "—"}</div>
+      </div>
+
+      <div class="recall-actions">
+        <button class="recall-secondary" id="recall-edit">Edit</button>
+        <button class="recall-primary" id="recall-close">Done</button>
+      </div>
+    `;
+
+    const closeBtn = panel.querySelector(".recall-x") as HTMLButtonElement;
+    closeBtn.onclick = hidePanel;
+
+    const doneBtn = panel.querySelector("#recall-close") as HTMLButtonElement;
+    doneBtn.onclick = hidePanel;
+
+    const editBtn = panel.querySelector("#recall-edit") as HTMLButtonElement;
+    editBtn.onclick = () => showCapture(note);
+  }
+
+  function tagChip(t: string) {
+    return `<span class="recall-chip">${escapeHtml(t)}</span>`;
+  }
+
+  function escapeHtml(str: string) {
+    return str
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  // --- Startup: load existing note & hook Connect ---
+  (async () => {
+    // Load note for this profile
+    const note = await loadNote(profileUrl);
+    if (note) {
+      existingNote = note;
+      pill.textContent = "View Recall";
+      pill.classList.add("has-note");
+    } else {
+      pill.textContent = "Recall";
+      pill.classList.remove("has-note");
+    }
+
+    // Hook connect button once (best-effort)
+    const connect = findConnectButton();
+    if (connect && !(connect as any).dataset?.recallHooked) {
+      (connect as any).dataset.recallHooked = "true";
+      connect.addEventListener("click", () => {
+        // Capture mode opens when Connect is clicked
+        showCapture({ metAt: "LinkedIn" });
+      });
+    }
+  })();
+
+  // Return null because we’re injecting real DOM ourselves
+  return null as any;
+}
+
+// Mount at load + handle LinkedIn SPA navigation
 window.addEventListener("load", mount);
 
-// LinkedIn SPA navigation support
-const obs = new MutationObserver(() => mount());
-obs.observe(document.documentElement, { subtree: true, childList: true });
+let lastHref = location.href;
+setInterval(() => {
+  if (location.href !== lastHref) {
+    lastHref = location.href;
+
+    // Remove old mount on navigation
+    const old = document.getElementById("recall-root");
+    if (old) old.remove();
+
+    // Remount on new profile pages
+    if (isProfilePage()) mount();
+  }
+}, 700);
