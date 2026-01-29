@@ -11,16 +11,24 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+
+    // This forces ONE single file output (no imports, no chunks)
+    lib: {
+      entry: path.resolve(__dirname, "src/content/content.tsx"),
+      name: "RecallContent",
+      formats: ["iife"],
+      fileName: () => "content.js"
+    },
+
+    // Prevent chunk splitting
     rollupOptions: {
-      input: {
-        content: path.resolve(__dirname, "src/content/content.tsx"),
-        popup: path.resolve(__dirname, "src/popup/popup.html")
-      },
       output: {
-        entryFileNames: "[name].js",
-        chunkFileNames: "chunks/[name]-[hash].js",
-        assetFileNames: "assets/[name]-[hash][extname]"
+        inlineDynamicImports: true
       }
-    }
+    },
+
+    // Keep it simple for Chrome
+    cssCodeSplit: false,
+    sourcemap: false
   }
 });
