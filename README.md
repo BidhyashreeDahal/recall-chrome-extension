@@ -35,26 +35,30 @@ ContextCue stays lightweight and personal — just notes, fast and private.
 
 ## Dev setup
 
-1) Install dependencies:
+### 1) Install dependencies
 ```
 npm install
 ```
 
-2) Create `.env` in the project root:
+### 2) Create `.env`
 ```
 VITE_SUPABASE_URL=your_project_url
 VITE_SUPABASE_ANON_KEY=your_anon_key
 ```
 
-3) Build:
+### 3) Build the extension
 ```
 npm run build
 ```
 
-4) Load in Edge/Chrome:
+### 4) Load in Edge/Chrome
 - Go to `chrome://extensions` (or `edge://extensions`)
 - Enable Developer Mode
 - Load unpacked → select the `dist` folder
+
+### 5) Icon set
+Icons live in `public/icons` and are copied into `dist/icons` on build.
+Replace those files if you want a different icon.
 
 ## Notes
 
