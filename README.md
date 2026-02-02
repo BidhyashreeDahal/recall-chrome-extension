@@ -36,17 +36,13 @@ ContextCue stays lightweight and personal — just notes, fast and private.
 ## Screenshots
 
 ### Add a note on a profile
-![Add note on LinkedIn](./public/screenshorts/profile-add-note.png)
+<img src="./public/screenshorts/profile-add-note.png" width="700" />
 
 ### Manage notes in the popup
-![Popup notes manager](./public/screenshorts/popup-notes.png)
+<img src="./public/screenshorts/popup-notes.png" width="520" />
 
 ### View a saved note
-![View note on LinkedIn](./public/screenshorts/profile-view-note.png)
-
-## Demo video
-
-<video src="./public/screenshorts/Video.mp4" controls width="700"></video>
+<img src="./public/screenshorts/profile-view-note.png" width="700" />
 
 ## Dev setup
 
