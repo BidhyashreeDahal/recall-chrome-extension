@@ -9,6 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing Supabase env vars.");
 }
 
+// Store suprabase auth session inside chrome.storage.local
 const chromeStorage = {
   async getItem(key: string) {
     const result = await chrome.storage.local.get(key);
