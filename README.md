@@ -8,8 +8,15 @@ Add a quick note on a profile, then manage all notes from the extension popup.
 - Save notes per LinkedIn profile
 - View notes later on the same profile
 - Search and filter notes in the popup
-- Backup/restore notes as a JSON file
+- Open a profile directly from the notes list
+- Backup/restore notes
 - Optional sync across devices via Supabase login
+
+## Who it is for
+
+- Recruiters and sourcers
+- Founders doing outreach
+- Networkers who meet many people
 
 ## How it works
 
@@ -20,6 +27,11 @@ Add a quick note on a profile, then manage all notes from the extension popup.
 
 By default, notes are stored locally in your browser.
 If you sign in, notes sync to Supabase so they follow you across devices.
+
+## Why it is different
+
+Most tools with LinkedIn notes are full sales/CRM platforms.
+ContextCue stays lightweight and personal — just notes, fast and private.
 
 ## Dev setup
 
