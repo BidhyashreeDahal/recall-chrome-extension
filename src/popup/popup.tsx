@@ -17,8 +17,7 @@ function displayNameFromUrl(url: string) {
 
 function App() {
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [codeSent, setCodeSent] = useState(false);
+  const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -79,48 +78,46 @@ function App() {
   }, [notes]);
 
   // Auth actions
-  const onSendCode = async () => {
+  const onSignIn = async () => {
     const value = email.trim();
-    if (!value) {
-      setStatus("Enter your email to sign in.");
+    if (!value || !password) {
+      setStatus("Enter email and password.");
       return;
     }
 
     setLoading(true);
-    setStatus("Sending sign-in code...");
-    const { error } = await supabase.auth.signInWithOtp({
-      email: value
+    setStatus("Signing in...");
+    const { error } = await supabase.auth.signInWithPassword({
+      email: value,
+      password
     });
 
     if (error) {
-      setStatus("Failed to send code. Try again.");
+      setStatus("Sign-in failed. Check your email or password.");
     } else {
-      setCodeSent(true);
-      setStatus("Check your email for the 6-digit code.");
+      setStatus("Signed in.");
     }
     setLoading(false);
   };
 
-  const onVerifyCode = async () => {
+  const onSignUp = async () => {
     const value = email.trim();
-    const otp = code.trim();
-    if (!value || !otp) {
-      setStatus("Enter email and code.");
+    if (!value || !password) {
+      setStatus("Enter email and password.");
       return;
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({
+    setStatus("Creating account...");
+    const { error } = await supabase.auth.signUp({
       email: value,
-      token: otp,
-      type: "email"
+      password
     });
 
     if (error) {
-      setStatus("Code is invalid or expired.");
+      setStatus("Sign-up failed. Try a different email.");
     } else {
-      setStatus("Signed in.");
-      setCode("");
+      setStatus("Account created. Check your email to confirm.");
     }
     setLoading(false);
   };
@@ -129,8 +126,6 @@ function App() {
     setLoading(true);
     await supabase.auth.signOut();
     setStatus("Signed out.");
-    setCodeSent(false);
-    setCode("");
     setLoading(false);
   };
 
@@ -200,27 +195,25 @@ function App() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email for sync"
             />
-            {codeSent && (
-              <input
-                className="input"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="6-digit code"
-              />
-            )}
-            {!codeSent ? (
-              <button className="btn full" onClick={onSendCode} disabled={loading}>
-                Send sign-in code
+            <input
+              className="input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password (min 6 chars)"
+              type="password"
+            />
+            <div className="auth-row">
+              <button className="btn full" onClick={onSignIn} disabled={loading}>
+                Sign in
               </button>
-            ) : (
               <button
-                className="btn full"
-                onClick={onVerifyCode}
+                className="btn ghost full"
+                onClick={onSignUp}
                 disabled={loading}
               >
-                Verify code
+                Create account
               </button>
-            )}
+            </div>
           </div>
         )}
       </div>
