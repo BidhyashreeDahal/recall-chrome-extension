@@ -17,6 +17,8 @@ function displayNameFromUrl(url: string) {
 
 function App() {
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -77,7 +79,7 @@ function App() {
   }, [notes]);
 
   // Auth actions
-  const onSignIn = async () => {
+  const onSendCode = async () => {
     const value = email.trim();
     if (!value) {
       setStatus("Enter your email to sign in.");
@@ -85,18 +87,40 @@ function App() {
     }
 
     setLoading(true);
-    setStatus("Sending login link...");
+    setStatus("Sending sign-in code...");
     const { error } = await supabase.auth.signInWithOtp({
-      email: value,
-      options: {
-        emailRedirectTo: chrome.runtime.getURL("popup.html")
-      }
+      email: value
     });
 
     if (error) {
-      setStatus("Sign-in failed. Try again.");
+      setStatus("Failed to send code. Try again.");
     } else {
-      setStatus("Check your email for the login link.");
+      setCodeSent(true);
+      setStatus("Check your email for the 6-digit code.");
+    }
+    setLoading(false);
+  };
+
+  const onVerifyCode = async () => {
+    const value = email.trim();
+    const otp = code.trim();
+    if (!value || !otp) {
+      setStatus("Enter email and code.");
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: value,
+      token: otp,
+      type: "email"
+    });
+
+    if (error) {
+      setStatus("Code is invalid or expired.");
+    } else {
+      setStatus("Signed in.");
+      setCode("");
     }
     setLoading(false);
   };
@@ -105,6 +129,8 @@ function App() {
     setLoading(true);
     await supabase.auth.signOut();
     setStatus("Signed out.");
+    setCodeSent(false);
+    setCode("");
     setLoading(false);
   };
 
@@ -174,9 +200,27 @@ function App() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email for sync"
             />
-            <button className="btn full" onClick={onSignIn} disabled={loading}>
-              Send sign-in link
-            </button>
+            {codeSent && (
+              <input
+                className="input"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="6-digit code"
+              />
+            )}
+            {!codeSent ? (
+              <button className="btn full" onClick={onSendCode} disabled={loading}>
+                Send sign-in code
+              </button>
+            ) : (
+              <button
+                className="btn full"
+                onClick={onVerifyCode}
+                disabled={loading}
+              >
+                Verify code
+              </button>
+            )}
           </div>
         )}
       </div>
