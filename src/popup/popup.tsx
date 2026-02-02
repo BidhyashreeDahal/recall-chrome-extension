@@ -15,6 +15,15 @@ function displayNameFromUrl(url: string) {
   }
 }
 
+function profileLink(profileUrl: string) {
+  try {
+    const u = new URL(profileUrl, "https://www.linkedin.com");
+    return u.toString();
+  } catch {
+    return `https://www.linkedin.com${profileUrl}`;
+  }
+}
+
 function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -251,7 +260,17 @@ function App() {
         ) : (
           filtered.map((n) => (
             <div key={n.profileUrl} className="card">
-              <div className="name">{displayNameFromUrl(n.profileUrl)}</div>
+              <div className="card-head">
+                <div className="name">{displayNameFromUrl(n.profileUrl)}</div>
+                <a
+                  className="link"
+                  href={profileLink(n.profileUrl)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open
+                </a>
+              </div>
               <div className="meta">{n.profileUrl}</div>
               <div className="note">{n.note || "—"}</div>
             </div>
