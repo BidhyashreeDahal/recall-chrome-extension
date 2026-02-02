@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { supabase } from "../shared/supabase";
 import { contextNote } from "../shared/types";
-import { exportNotes, importNotes, listNotes } from "../shared/storage";
+import { deleteNote, exportNotes, importNotes, listNotes } from "../shared/storage";
 
 function displayNameFromUrl(url: string) {
   try {
@@ -167,6 +167,13 @@ function App() {
     }
   };
 
+  const onDelete = async (profileUrl: string) => {
+    const ok = confirm("Delete this note?");
+    if (!ok) return;
+    await deleteNote(profileUrl);
+    refresh();
+  };
+
   return (
     <div className="app">
       <div className="top">
@@ -262,14 +269,22 @@ function App() {
             <div key={n.profileUrl} className="card">
               <div className="card-head">
                 <div className="name">{displayNameFromUrl(n.profileUrl)}</div>
-                <a
-                  className="link"
-                  href={profileLink(n.profileUrl)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open
-                </a>
+                <div className="card-actions">
+                  <a
+                    className="link"
+                    href={profileLink(n.profileUrl)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open
+                  </a>
+                  <button
+                    className="link danger"
+                    onClick={() => onDelete(n.profileUrl)}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
               <div className="meta">{n.profileUrl}</div>
               <div className="note">{n.note || "—"}</div>

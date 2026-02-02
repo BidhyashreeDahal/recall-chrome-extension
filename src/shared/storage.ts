@@ -137,3 +137,19 @@ export const exportNotes = async (): Promise<contextNote[]> => {
   return await listNotes();
 };
 
+export const deleteNote = async (profileUrl: string): Promise<void> => {
+  const userId = await getUserId();
+  if (!userId) {
+    await new Promise<void>((resolve) => {
+      chrome.storage.local.remove(profileUrl, () => resolve());
+    });
+    return;
+  }
+
+  await supabase
+    .from("notes")
+    .delete()
+    .eq("user_id", userId)
+    .eq("profile_url", profileUrl);
+};
+
