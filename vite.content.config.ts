@@ -14,13 +14,18 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    emptyOutDir: false,
+    emptyOutDir: true,
+    lib: {
+      entry: path.resolve(__dirname, "src/content/content.tsx"),
+      name: "RecallContent",
+      formats: ["iife"],
+      fileName: () => "content.js"
+    },
     rollupOptions: {
-      input: {
-        popup: path.resolve(__dirname, "src/popup/popup.html")
+      output: {
+        inlineDynamicImports: true
       }
     },
-
     cssCodeSplit: false,
     sourcemap: false
   }

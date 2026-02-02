@@ -1,42 +1,82 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { supabase } from "../shared/supabase";
+import { contextNote } from "../shared/types";
+import { exportNotes, importNotes, listNotes } from "../shared/storage";
+
+function displayNameFromUrl(url: string) {
+  try {
+    const u = new URL(url, "https://www.linkedin.com");
+    const parts = u.pathname.split("/").filter(Boolean);
+    const slug = parts[1] || parts[0] || url;
+    return slug.replace(/-/g, " ");
+  } catch {
+    return url;
+  }
+}
 
 function App() {
-  // User input for login
   const [email, setEmail] = useState("");
-  // Small status message to guide the user
   const [status, setStatus] = useState<string | null>(null);
-  // If logged in, we store their email here
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  // Prevent double-clicks while a request is running
   const [loading, setLoading] = useState(false);
 
-  // Check login state on load + listen for auth changes
+  const [notes, setNotes] = useState<contextNote[]>([]);
+  const [query, setQuery] = useState("");
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+
+  // Auth state
   useEffect(() => {
     let mounted = true;
-
-    // Get current session
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setUserEmail(data.session?.user?.email ?? null);
     });
 
-    // Update UI when auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUserEmail(session?.user?.email ?? null);
+        refresh();
       }
     );
 
-    // Cleanup
     return () => {
       mounted = false;
       authListener.subscription.unsubscribe();
     };
   }, []);
 
-  // Send magic link login email
+  // Load notes
+  const refresh = async () => {
+    const all = await listNotes();
+    // newest first
+    all.sort((a, b) => b.updatedAt - a.updatedAt);
+    setNotes(all);
+  };
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  // Filtered notes
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return notes.filter((n) => {
+      const matchTag = tagFilter ? n.tags.includes(tagFilter) : true;
+      const haystack =
+        `${n.profileUrl} ${displayNameFromUrl(n.profileUrl)} ${n.tags.join(" ")} ${n.note} ${n.metAt ?? ""}`.toLowerCase();
+      const matchText = q ? haystack.includes(q) : true;
+      return matchTag && matchText;
+    });
+  }, [notes, query, tagFilter]);
+
+  const tags = useMemo(() => {
+    const set = new Set<string>();
+    notes.forEach((n) => n.tags.forEach((t) => set.add(t)));
+    return Array.from(set).sort();
+  }, [notes]);
+
+  // Auth actions
   const onSignIn = async () => {
     const value = email.trim();
     if (!value) {
@@ -46,11 +86,9 @@ function App() {
 
     setLoading(true);
     setStatus("Sending login link...");
-
     const { error } = await supabase.auth.signInWithOtp({
       email: value,
       options: {
-        // This opens the extension popup after the user clicks the email link
         emailRedirectTo: chrome.runtime.getURL("popup.html")
       }
     });
@@ -63,7 +101,6 @@ function App() {
     setLoading(false);
   };
 
-  // Sign out
   const onSignOut = async () => {
     setLoading(true);
     await supabase.auth.signOut();
@@ -71,83 +108,129 @@ function App() {
     setLoading(false);
   };
 
-  return (
-    <div style={{ padding: 12, width: 320, fontFamily: "system-ui" }}>
-      <h3 style={{ margin: 0 }}>ContextCue</h3>
+  // Export
+  const onExport = async () => {
+    const data = await exportNotes();
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json"
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "contextcue-notes.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
-      {/* Show sync status */}
-      <p style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>
+  // Import
+  const onImportFile = async (file: File | null) => {
+    if (!file) return;
+    const text = await file.text();
+    try {
+      const json = JSON.parse(text);
+      if (!Array.isArray(json)) throw new Error("Invalid format");
+      await importNotes(json as contextNote[]);
+      setStatus("Import complete.");
+      refresh();
+    } catch {
+      setStatus("Import failed. Invalid JSON.");
+    }
+  };
+
+  return (
+    <div className="app">
+      <div className="top">
+        <div className="title">ContextCue</div>
+        <button className="btn" onClick={onExport}>
+          Export
+        </button>
+      </div>
+
+      <div className="status">
         {userEmail
           ? "Sync is on for this account."
           : "Notes are saved locally. Sign in to sync."}
-      </p>
+      </div>
 
-      {/* Logged in UI */}
-      {userEmail ? (
-        <div style={{ marginTop: 10 }}>
-          <div style={{ fontSize: 12, opacity: 0.8 }}>{userEmail}</div>
+      <div className="auth">
+        {userEmail ? (
+          <div className="auth-logged">
+            <div className="email">{userEmail}</div>
+            <button
+              className="btn full"
+              onClick={onSignOut}
+              disabled={loading}
+            >
+              Sign out
+            </button>
+          </div>
+        ) : (
+          <div className="auth-logged">
+            <input
+              className="input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+            />
+            <button className="btn full" onClick={onSignIn} disabled={loading}>
+              Send login link
+            </button>
+          </div>
+        )}
+      </div>
+
+      <input
+        className="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search name, tags, notes…"
+      />
+
+      <div className="tags">
+        <button
+          className={`chip ${tagFilter === null ? "active" : ""}`}
+          onClick={() => setTagFilter(null)}
+        >
+          All
+        </button>
+        {tags.map((t) => (
           <button
-            style={{
-              marginTop: 8,
-              border: 0,
-              borderRadius: 999,
-              padding: "8px 10px",
-              fontWeight: 800,
-              cursor: "pointer",
-              background: "#0a66c2",
-              color: "#fff",
-              width: "100%"
-            }}
-            onClick={onSignOut}
-            disabled={loading}
+            key={t}
+            className={`chip ${tagFilter === t ? "active" : ""}`}
+            onClick={() => setTagFilter(tagFilter === t ? null : t)}
           >
-            Sign out
+            {t}
           </button>
-        </div>
-      ) : (
-        // Logged out UI
-        <div style={{ marginTop: 10 }}>
+        ))}
+      </div>
+
+      <div className="list">
+        {filtered.length === 0 ? (
+          <div className="empty">No notes yet. Save one from a profile.</div>
+        ) : (
+          filtered.map((n) => (
+            <div key={n.profileUrl} className="card">
+              <div className="name">{displayNameFromUrl(n.profileUrl)}</div>
+              <div className="meta">{n.profileUrl}</div>
+              <div className="note">{n.note || "—"}</div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="import">
+        <label className="file">
+          Import JSON
           <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              borderRadius: 10,
-              border: "1px solid rgba(0,0,0,0.2)",
-              fontSize: 12
-            }}
+            type="file"
+            accept="application/json"
+            onChange={(e) => onImportFile(e.target.files?.[0] ?? null)}
           />
-          <button
-            style={{
-              marginTop: 8,
-              border: 0,
-              borderRadius: 999,
-              padding: "8px 10px",
-              fontWeight: 800,
-              cursor: "pointer",
-              background: "#0a66c2",
-              color: "#fff",
-              width: "100%"
-            }}
-            onClick={onSignIn}
-            disabled={loading}
-          >
-            Send login link
-          </button>
-        </div>
-      )}
-
-      {/* Small helper text */}
-      {status && (
-        <div style={{ marginTop: 8, fontSize: 11, opacity: 0.8 }}>
-          {status}
-        </div>
-      )}
+        </label>
+        {status && <div className="msg">{status}</div>}
+      </div>
     </div>
   );
 }
 
-// Note: popup.html uses <div id="app">
 createRoot(document.getElementById("app")!).render(<App />);

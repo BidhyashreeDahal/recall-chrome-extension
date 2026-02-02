@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build:content": "vite build --config vite.content.config.ts",
+    "build:popup": "vite build",
+    "build": "npm run build:content && npm run build:popup",
     "preview": "vite preview"
   },
   "dependencies": {

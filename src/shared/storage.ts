@@ -15,6 +15,23 @@ const loadNoteLocal = (profileUrl: string): Promise<contextNote | null> => {
   });
 };
 
+
+const listNotesLocal = (): Promise<contextNote[]> => {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(null, (result) => {
+      const notes = Object.values(result).filter(
+        (v): v is contextNote =>
+          typeof v === "object" &&
+          v !== null &&
+          "profileUrl" in v &&
+          "note" in v
+      );
+      resolve(notes);
+    });
+  });
+};
+
+
 const getUserId = async (): Promise<string | null> => {
   const { data, error } = await supabase.auth.getSession();
   if (error) return null;
@@ -81,3 +98,42 @@ export const loadNote = (profileUrl: string): Promise<contextNote | null> => {
     return toNote(data);
   })();
 };
+
+export const listNotes = (): Promise<contextNote[]> => {
+  return (async () => {
+    const userId = await getUserId();
+    if (!userId) return listNotesLocal();
+
+    const { data, error } = await supabase
+      .from("notes")
+      .select("profile_url, met_at, tags, note, created_at, updated_at")
+      .eq("user_id", userId);
+
+    if (error || !data) return listNotesLocal();
+    return data.map(toNote);
+  })();
+
+};
+
+export const importNotes = async (notes: contextNote[]): Promise<void> => {
+  const userId = await getUserId();
+  if (!userId) {
+    for (const n of notes) await saveNoteLocal(n);
+    return;
+  }
+
+  const rows = notes.map((n) => toRow(n, userId));
+  const { error } = await supabase
+    .from("notes")
+    .upsert(rows, { onConflict: "user_id,profile_url" });
+
+  if (error) {
+    // fallback to local if Supabase fails
+    for (const n of notes) await saveNoteLocal(n);
+  }
+};
+
+export const exportNotes = async (): Promise<contextNote[]> => {
+  return await listNotes();
+};
+
