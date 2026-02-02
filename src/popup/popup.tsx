@@ -141,21 +141,23 @@ function App() {
     <div className="app">
       <div className="top">
         <div className="title">ContextCue</div>
-        <button className="btn" onClick={onExport}>
-          Export
-        </button>
+        <div className="actions">
+          <button className="btn ghost" onClick={onExport}>
+            Backup
+          </button>
+        </div>
       </div>
 
       <div className="status">
         {userEmail
           ? "Sync is on for this account."
-          : "Notes are saved locally. Sign in to sync."}
+          : "Saved on this device. Sign in to sync across devices."}
       </div>
 
       <div className="auth">
         {userEmail ? (
           <div className="auth-logged">
-            <div className="email">{userEmail}</div>
+            <div className="email">Signed in as {userEmail}</div>
             <button
               className="btn full"
               onClick={onSignOut}
@@ -170,21 +172,23 @@ function App() {
               className="input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder="Email for sync"
             />
             <button className="btn full" onClick={onSignIn} disabled={loading}>
-              Send login link
+              Send sign-in link
             </button>
           </div>
         )}
       </div>
 
-      <input
-        className="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search name, tags, notes…"
-      />
+      <div className="search-wrap">
+        <input
+          className="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search people, tags, notes…"
+        />
+      </div>
 
       <div className="tags">
         <button
@@ -220,7 +224,7 @@ function App() {
 
       <div className="import">
         <label className="file">
-          Import JSON
+          Restore backup
           <input
             type="file"
             accept="application/json"

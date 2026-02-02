@@ -17,6 +17,12 @@ body {
   gap: 10px;
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .title {
   font-weight: 900;
   font-size: 14px;
@@ -30,6 +36,12 @@ body {
   cursor: pointer;
   background: #0a66c2;
   color: #fff;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: #0a66c2;
+  border: 1px solid rgba(10, 102, 194, 0.3);
 }
 
 .btn.full {
@@ -59,6 +71,10 @@ body {
   border: 1px solid rgba(0, 0, 0, 0.2);
   font-size: 12px;
   box-sizing: border-box;
+}
+
+.search-wrap {
+  position: relative;
 }
 
 .search {
