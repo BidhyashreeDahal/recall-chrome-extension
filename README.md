@@ -44,13 +44,13 @@ ContextCue stays lightweight and personal — just notes, fast and private.
 ## Screenshots
 
 ### Add a note on a profile
-<img src="./public/screenshorts/profile-add-note.png" width="600" />
+<img src="./public/screenshorts/profile-add-note.png" width="700" />
 
 ### Manage notes in the popup
-<img src="./public/screenshorts/popup-notes.png" width="600" />
+<img src="./public/screenshorts/popup-notes.png" width="700" />
 
 ### View a saved note
-<img src="./public/screenshorts/profile-view-note.png" width="600" />
+<img src="./public/screenshorts/profile-view-note.png" width="700" />
 
 ## Dev setup
 
