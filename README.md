@@ -33,6 +33,25 @@ If you sign in, notes sync to Supabase so they follow you across devices.
 Most tools with LinkedIn notes are full sales/CRM platforms.
 ContextCue stays lightweight and personal — just notes, fast and private.
 
+## Case study (short)
+
+**Problem**  
+LinkedIn is where I meet people, but I forget context later. Full CRMs feel heavy for simple personal notes.
+
+**Audience**  
+Recruiters, founders, and networkers who want fast notes without a CRM workflow.
+
+**Solution**  
+A lightweight LinkedIn note pill + a searchable popup notes manager.
+
+**Key decisions**  
+- Keep UX minimal (no automation, no CRM pipeline).
+- Store locally by default; optional sync with Supabase.
+- Build an extension popup for search, tags, export/import, and quick access.
+
+**Outcome**  
+A shippable MVP with profile notes, search, tags, export/import, and optional sync.
+
 ## Tech stack
 
 - Chrome Extension (Manifest V3)
