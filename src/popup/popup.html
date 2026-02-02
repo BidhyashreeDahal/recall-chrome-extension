@@ -3,31 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Recall</title>
+    <title>ContextCue</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <div id="app">
-      <div class="top">
-        <div class="title">Recall</div>
-        <button id="exportBtn" class="btn">Export</button>
-      </div>
+    <div id="app"></div>
 
-      <input id="q" class="search" placeholder="Search name, tags, notes…" />
-
-      <div id="tags" class="tags"></div>
-
-      <div id="list" class="list"></div>
-
-      <div class="import">
-        <label class="file">
-          Import JSON
-          <input id="importFile" type="file" accept="application/json" />
-        </label>
-        <div id="msg" class="msg"></div>
-      </div>
-    </div>
-
-    <script src="popup.js"></script>
+    <script type="module" src="/src/popup/popup.tsx"></script>
   </body>
 </html>
