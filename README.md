@@ -33,6 +33,14 @@ If you sign in, notes sync to Supabase so they follow you across devices.
 Most tools with LinkedIn notes are full sales/CRM platforms.
 ContextCue stays lightweight and personal — just notes, fast and private.
 
+## Tech stack
+
+- Chrome Extension (Manifest V3)
+- React + TypeScript
+- Vite build
+- Supabase Auth + Postgres (optional sync)
+- `chrome.storage.local` for local notes
+
 ## Screenshots
 
 ### Add a note on a profile
